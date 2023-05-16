@@ -8,11 +8,11 @@
 celltransitions <- function(input) {
 
   
-timepoints<-dlgList(title="Data point(s) for estimation",multiple=TRUE, choices=input$timepoints)$res  
-trMatrix=calculate_transitionMatrix(input$experimentalData,input$timepoints,timepoints)
-MC <- new("markovchain", states = input$cell_types,
-               transitionMatrix = trMatrix,
-               name = "Markov Chain")
+  timepoints<-dlgList(title="Data point(s) for estimation",multiple=TRUE, choices=input$timepoints)$res  
+  trMatrix=calculate_transitionMatrix(input$experimentalData,input$timepoints,timepoints)
+  MC <- new("markovchain", states = input$cell_types,
+            transitionMatrix = trMatrix,
+            name = "Markov Chain")
 
 print("Results of CellTrans")
 print("################################")

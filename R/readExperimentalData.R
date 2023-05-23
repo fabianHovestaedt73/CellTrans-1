@@ -7,8 +7,8 @@
 library(devtools)
 library(readr)
 library(tcltk)
-
 library(shinyFiles)
+library(tcltk2)
 
 
 readExperimentalData <- function()  {
@@ -34,7 +34,6 @@ readExperimentalData <- function()  {
                       ifelse(grepl(";", timepoints), ";", " "))
   timepoints <- strsplit(timepoints, separator)[[1]]
   timepoints <- as.numeric(timepoints)
-  print(timepoints)
   
   
   #Create matrix for cell distribution matrices incuding initial experimental matrix
@@ -64,54 +63,25 @@ readExperimentalData <- function()  {
   }
   
   
-  library(tcltk2)
-  
   naturalOrder <- function(x) {
     as.numeric(gsub("[^[:digit:]]", "", x))
   }
   
   select_file_or_dir <- function() {
     # Abfrage, ob Datei oder Ordner ausgewählt werden soll
-    choice <- utils::menu(c("Datei", "Ordner"), title = "Auswahl treffen")
-    if (choice == "Datei") {
+    choice <- utils::menu(c("File", "Folder"), title = "Select a file or folder, where the cell state distribution matrices are stored")
+    if (choice == "File") {
       # Datei auswählen
       input_path <- file.choose()
-      print("FILE")
     } else {
       # Ordner auswählen
-      input_path <- tclvalue(tkchooseDirectory())
-      print("Folder")
+      input_path <- tclvalue(tkchooseDirectory(title="Select a Folder"))
     }
     # Rückgabe des ausgewählten Pfads
     return(input_path)
   }
   
-  ## Uncomment the call of the function
   input_path <- select_file_or_dir()
-
-  
-  
-  
-  
-  # # Prompt user to select a file or folder
-   #input_path <- "/home/fabian/Desktop/HTW/2.Semester/FuE2/CellTrans-1/case_studies/SW620/transition_matrices/"
-  
-  
-  
-  
-  # # Create a dialog window to select a file or folder
-  # selected_path <- tclvalue(tk_choose.dir())
-  # # Store the selected path in the input_path variable
-  # input_path <- selected_path
-  # # Print the selected path
-  # print(input_path)
-  
-  # 
-  # selected_path <- file.choose()
-  # input_path <- selected_path
-  # print(input_path)
-  # 
-  
   
   
   j <- 0

@@ -9,7 +9,7 @@ celltransitions <- function(input) {
 
   
   # Create a file chooser dialog to select the input file
-  selected_file <- tclvalue(tkgetOpenFile())
+  selected_file <- tclvalue(tkgetOpenFile(title="Data point(s) for estimation"))
   datapoints <- read_lines(selected_file)
   
   # Determine the separator based on the contents of the file
@@ -19,7 +19,6 @@ celltransitions <- function(input) {
   datapoints <- as.numeric(datapoints)
   
   # Print the data points
-  print("datapoints: "); print(datapoints)
   # Rest of your code using the datapoints variable
   #timepoints <- dlgList(title = "Data point(s) for estimation", multiple = TRUE, choices = input$timepoints)$res
   trMatrix <- calculate_transitionMatrix(input$experimentalData, input$timepoints, datapoints)

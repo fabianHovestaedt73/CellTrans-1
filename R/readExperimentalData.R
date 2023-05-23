@@ -5,8 +5,13 @@
 #' @export
 
 library(devtools)
+library(readr)
+library(tcltk)
+
+library(shinyFiles)
+
+
 readExperimentalData <- function()  {
-  
   dlgMessage("Welcome to CellTrans!\n Please assure that you have prepared appropriate files containing the cell state distribution matrices representing your experimental data.")
   cellnr  <- 	as.integer(dlgInput("Number of cell states")$res)
   #Read cell type names
@@ -20,43 +25,17 @@ readExperimentalData <- function()  {
   timeunits<-dlgList(title="Time step length",c("minutes","hours","days","weeks","months","cell divisions"))$res
   timenr<-as.integer(dlgInput("Number of time points")$res)
   
-  # timepoints=rep(0,timenr) #AUTOMATISIEREN
-  # for (i in 1:timenr)  {
-  #   timepoints[i] <-dlgInput(paste0("Timepoint ",i))$res
-  # }
-  # timepoints=as.numeric(timepoints)
-  # 
-  # #Ask for period and starting timepoint
-  # period <- as.integer(dlgInput("Period of time points")$res)
-  # start_tp <- as.integer(dlgInput("Starting time point")$res)
-  # 
-  # #Create timepoints vector based on period and starting timepoint
-  # timepoints <- seq(start_tp, (timenr - 1) * period + start_tp, by = period)
-  # 
-  # #Print the timepoints vector  
-  # timepoints <- as.numeric(timepoints)
-  
-  library(readr)
-  library(tcltk)
   
   # Create a file chooser dialog to select the input file
   selected_file <- tclvalue(tkgetOpenFile())
-  
-  # Read the contents of the selected file
   timepoints <- read_lines(selected_file)
-  
   # Determine the separator based on the contents of the file
   separator <- ifelse(grepl(",", timepoints), ",", 
                       ifelse(grepl(";", timepoints), ";", " "))
-  
-  # Split the timepoints using the determined separator
   timepoints <- strsplit(timepoints, separator)[[1]]
-  
-  # Convert the timepoints to numeric
   timepoints <- as.numeric(timepoints)
-  
-  # Print the resulting timepoints
   print(timepoints)
+  
   
   #Create matrix for cell distribution matrices incuding initial experimental matrix
   expData=matrix(0, nrow=cellnr*(timenr+1),ncol=cellnr)
@@ -84,72 +63,55 @@ readExperimentalData <- function()  {
     }
   }
   
-# 
-#   Ask for cell distribution matrices
-#   j=0
-#   for (t in timepoints) {
-#     j=j+1
-#     expData[(j*cellnr+1):((j+1)*cellnr),]=matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",t,"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-#     while (!isTrMatrix(  expData[(j*cellnr+1):((j+1)*cellnr),]  ) ) {dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ",cellnr,"!"))
-#       expData[(j*cellnr+1):((j+1)*cellnr),]=matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",t,"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-#     }
-#   }
-#   return(list("cellnr"=cellnr, "cell_types"=cell_types, "timeunits"=timeunits, "timenr"=timenr, "timepoints"=timepoints, "experimentalData"=expData))
-# 
-# 
-#   Öffne einen Dialog zum Auswählen einer Datei oder eines Ordners
-#   dlg <- dlgFile(title = "Select file or folder", filter = c("All files (*.*)|*.*"), multiple = FALSE)
-# 
-#   # Extrahiere den Pfad aus dem Rückgabewert des Dialogs
-#   if (dlg$was_cancelled) {
-#     stop("No file or folder selected.")
-#   } else if (dlg$is_folder) {
-#     input_path <- dlg$path
-#   } else {
-#     input_path <- dirname(dlg$path)
-#   }
+  
+  library(tcltk2)
   
   naturalOrder <- function(x) {
     as.numeric(gsub("[^[:digit:]]", "", x))
   }
   
-  library(tcltk)
-  
   select_file_or_dir <- function() {
     # Abfrage, ob Datei oder Ordner ausgewählt werden soll
     choice <- utils::menu(c("Datei", "Ordner"), title = "Auswahl treffen")
-    
     if (choice == "Datei") {
       # Datei auswählen
-      input_path <- choose.file()
+      input_path <- file.choose()
+      print("FILE")
     } else {
       # Ordner auswählen
-      input_path <- choose.dir()
-      print("directory")
-      print(input_path)
+      input_path <- tclvalue(tkchooseDirectory())
+      print("Folder")
     }
-    
     # Rückgabe des ausgewählten Pfads
     return(input_path)
   }
   
-  #select_file_or_dir()
+  ## Uncomment the call of the function
+  input_path <- select_file_or_dir()
+
+  
+  
+  
   
   # # Prompt user to select a file or folder
-  # input_path <- "C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/CellTrans/Supplementary Material_712241/SW620"
-  # # Prompt user to select a file or folder
+   #input_path <- "/home/fabian/Desktop/HTW/2.Semester/FuE2/CellTrans-1/case_studies/SW620/transition_matrices/"
+  
+  
+  
+  
+  # # Create a dialog window to select a file or folder
+  # selected_path <- tclvalue(tk_choose.dir())
+  # # Store the selected path in the input_path variable
+  # input_path <- selected_path
+  # # Print the selected path
+  # print(input_path)
+  
+  # 
+  # selected_path <- file.choose()
+  # input_path <- selected_path
+  # print(input_path)
   # 
   
-  library(tcltk)
-  
-  # Create a dialog window to select a file or folder
-  selected_path <- tclvalue(tk_choose.dir())
-  
-  # Store the selected path in the input_path variable
-  input_path <- selected_path
-  
-  # Print the selected path
-  print(input_path)
   
   
   j <- 0

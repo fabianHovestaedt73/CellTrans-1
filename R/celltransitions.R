@@ -8,16 +8,28 @@
 celltransitions <- function(input) {
 
   
-  timepoints<-dlgList(title="Data point(s) for estimation",multiple=TRUE, choices=input$timepoints)$res  
-  trMatrix=calculate_transitionMatrix(input$experimentalData,input$timepoints,timepoints)
-  MC <- new("markovchain", states = input$cell_types,
-            transitionMatrix = trMatrix,
-            name = "Markov Chain")
+  # Create a file chooser dialog to select the input file
+  selected_file <- tclvalue(tkgetOpenFile())
+  datapoints <- read_lines(selected_file)
+  
+  # Determine the separator based on the contents of the file
+  separator <- ifelse(grepl(",", datapoints), ",",
+                      ifelse(grepl(";", datapoints), ";", " "))
+  datapoints <- strsplit(datapoints, separator)[[1]]
+  datapoints <- as.numeric(datapoints)
+  
+  # Print the data points
+  print("datapoints: "); print(datapoints)
+  # Rest of your code using the datapoints variable
+  #timepoints <- dlgList(title = "Data point(s) for estimation", multiple = TRUE, choices = input$timepoints)$res
+  trMatrix <- calculate_transitionMatrix(input$experimentalData, input$timepoints, datapoints)
+  MC <- new("markovchain", states = input$cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
+  
 
 print("Results of CellTrans")
 print("################################")
 print("used timepoints:")
-print(timepoints)
+print(datapoints)
 print(MC)
 print("predicted equilibrium distribution")
 print(steadyStates(MC))

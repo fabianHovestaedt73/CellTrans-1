@@ -18,20 +18,20 @@
   n=ncol(M) #Rang of Matrix
   transitionMatrix=0
   countQOM=0
-  tau=0.1
+  tau=0.25
   
   for (i in 1:length(t)) {
-      #browser()
       #first submatrix in M contains initial matsrix, calculate inverse
       invInitialMatrix=solve(M[1:n,]) #
       
+      #calculate steps
       if(i == 1) {
-        real_timeDifference <- t[i] 
-        m <- 0
+        real_timeDifference <- t[i]
       }else {
         real_timeDifference <- t[i] - t[i-1]
-        m <- t[i]
       }
+      k <- real_timeDifference/tau
+      
       #derive transition matrices beginning with second submatrix in M
       if (t[i] %in% used_timepoints ) {
         
@@ -42,39 +42,19 @@
         #4. Der Ausdruck "expm((1/t[i]) * logm((invInitialMatrix %% M[(in+1):((i+1)*n), ]), method = "Eigen"))" wendet die Funktion expm() auf die berechnete Matrix an. Die Funktion expm() berechnet die Matrix-Exponentialfunktion.
         #5. Schließlich wird das Ergebnis der berechneten Übergangsmatrix Ptemp zugewiesen.
         #zusammengefasst: berechnet die Zeile Code die Übergangsmatrix Ptemp für den Zeitpunkt t[i], indem sie die inverse Anfangsmatrix mit einer Teilmatrix von M multipliziert, den Logarithmus dieser Teilmatrix berechnet, ihn durch die Zeit t[i] teilt und dann die Matrix-Exponentialfunktion anwendet.
+        #browser()
+        Ptemp <- expm( (1/(k*i)) * logm( (invInitialMatrix%*%M[(i*n+1):((i+1)*n), ]) ,method="Eigen")) # berechnet für t[i]==8 die 8. Matrixwurzel, für t[i]==6 die 6. M.W. usw.
+        } else {    Ptemp=(invInitialMatrix%*%M[(i*n+1):((i+1)*n), ])%^%(1/t[i])}
         
-        Ptemp <- expm( (1/(t[i])) * logm( (invInitialMatrix%*%M[(i*n+1):((i+1)*n), ]) ,method="Eigen")) # berechnet für t[i]==8 die 8. Matrixwurzel, für t[i]==6 die 6. M.W. usw.
+        if (isTrMatrix(Ptemp)==FALSE) {
+          assign( paste("P",t[i],sep=""),QOM(Ptemp)  )
+          countQOM=countQOM+1
+        } else {    assign( paste("P",t[i],sep=""),Ptemp)}
         
-        
-        k <- real_timeDifference/tau
-        for (l in 1:k){
-          m <- m + tau
-          
-          Ptemp_neu <- expm( (1/m) * logm( (invInitialMatrix%*%((M[(i*n+1):((i+1)*n), ]))) ,method="Eigen"))
-          
-          
-          # if (isTrMatrix(Ptemp)==FALSE) {
-          #   assign( paste("P",t[i],sep=""),QOM(Ptemp)  )
-          #   countQOM=countQOM+1
-          # }
-          # else {    assign( paste("P",t[i],sep=""),Ptemp)}
-          
-          if (isTrMatrix(Ptemp_neu)==FALSE) {
-            assign( paste("P",t[i],sep=""),QOM(Ptemp_neu)  )
-            countQOM=countQOM+1
-          }
-          else {    assign( paste("P",t[i],sep=""),Ptemp_neu)}
-          
-          transitionMatrix=transitionMatrix+get( paste("P",t[i],sep=""))
-        }
-        
-        
-      } else {
-        Ptemp=(invInitialMatrix%*%M[(i*n+1):((i+1)*n), ])%^%(1/t[i])
-      }
+        transitionMatrix=transitionMatrix+get( paste("P",t[i],sep=""))
     }
   }
-  transitionMatrix=transitionMatrix/(length(used_timepoints)*k)
+  transitionMatrix=transitionMatrix/(length(used_timepoints))
 
   return(transitionMatrix)
 

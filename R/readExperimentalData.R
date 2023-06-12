@@ -9,6 +9,7 @@ library(readr)
 library(tcltk)
 library(shinyFiles)
 library(tcltk2)
+library(shiny)
 
 
 readExperimentalData <- function()  {

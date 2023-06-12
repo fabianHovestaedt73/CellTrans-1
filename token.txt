@@ -1,1 +1,4 @@
-fabianHovestaedt73: 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
+Todo: git --global config user.name "fabianHovestaedt73"; git --global config user.email "hovestaedtfabian99@web.de"
+fabianHovestaedt73: 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
+
+Falls es nicht geht: neuen fine-grained Token erstellen mit allen rechten!!

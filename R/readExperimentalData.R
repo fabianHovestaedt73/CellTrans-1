@@ -10,7 +10,15 @@ library(tcltk)
 library(shinyFiles)
 library(tcltk2)
 library(shiny)
+load_all("/home/fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/")
 
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/celltransitions.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/calculate_transitionMatrix.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/isTrMatrix.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/shiny_userInterface.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/shiny_server.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/shiny_server.R")
+# shinyApp(shinyUI, shinyServer)
 
 readExperimentalData <- function()  {
   dlgMessage("Welcome to CellTrans!\n Please assure that you have prepared appropriate files containing the cell state distribution matrices representing your experimental data.")

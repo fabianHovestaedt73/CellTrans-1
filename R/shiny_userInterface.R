@@ -1,6 +1,3 @@
-library(shiny)
-
-
 # Define the UI
 ui <- fluidPage(
   # Input widgets

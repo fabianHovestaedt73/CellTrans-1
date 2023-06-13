@@ -18,7 +18,7 @@
   n=ncol(M) #Rang of Matrix
   transitionMatrix=0
   countQOM=0
-  tau=1
+  tau=0.00000001
   
   for (i in 1:length(t)) {
       #first submatrix in M contains initial matsrix, calculate inverse
@@ -54,7 +54,15 @@
         transitionMatrix=transitionMatrix+get( paste("P",t[i],sep=""))
     }
   }
-  transitionMatrix=transitionMatrix/(length(used_timepoints))
+  browser()
+  
+  
+  
+  transitionMatrix=(transitionMatrix/(length(used_timepoints)))/tau
+  
+  for (i in 1:n) {
+    transitionMatrix[i, i] <- 1 - sum(transitionMatrix[i, -i])
+  }
 
   return(transitionMatrix)
 

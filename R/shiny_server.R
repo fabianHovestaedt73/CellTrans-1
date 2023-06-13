@@ -36,5 +36,13 @@ server <- function(input, output, session) {
               "; timepoints:", paste(timepoints, collapse = ", "))
       })
     }
+    cellnr <- input$cellnr
+    timenr <- input$timenr
+    expDataMatrix <- matrix(0, nrow = cellnr * (timenr + 1), ncol = cellnr)
+    expDataMatrix[1:cellnr, ] <- diag(cellnr)
+    })
+  
+    session$onSessionEnded(function() {
+    stopApp()
   })
 }

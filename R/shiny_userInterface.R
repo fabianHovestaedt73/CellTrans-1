@@ -1,5 +1,6 @@
 # Define the UI
 ui <- fluidPage(
+  titlePanel("CellTrans Shiny App"),
   # Input widgets
   numericInput("cellnr", "Number of cell states", value = 0),
   uiOutput("cellTypes"),

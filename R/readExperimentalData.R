@@ -92,7 +92,7 @@ readExperimentalData <- function()  {
   
   input_path <- select_file_or_dir()
   
-  
+  browser()
   j <- 0
   if (file.exists(input_path) && !file.info(input_path)$isdir) {
     # If input_path is a file, treat it as a single timepoint

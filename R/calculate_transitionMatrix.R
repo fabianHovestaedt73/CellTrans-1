@@ -54,10 +54,6 @@
         transitionMatrix=transitionMatrix+get( paste("P",t[i],sep=""))
     }
   }
-  browser()
-  
-  
-  
   transitionMatrix=(transitionMatrix/(length(used_timepoints)))/tau
   
   for (i in 1:n) {
@@ -65,5 +61,4 @@
   }
 
   return(transitionMatrix)
-
 }

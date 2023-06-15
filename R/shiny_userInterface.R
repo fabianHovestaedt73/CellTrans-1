@@ -12,6 +12,7 @@ ui <- fluidPage(
   checkboxInput("identityMatrix", label = "Identity matrix (pure initial cell compositions)", value = TRUE),
   shinyDirButton("dir", "Input directory", "Upload"),
   verbatimTextOutput("dir", placeholder = TRUE),
+  verbatimTextOutput("dir1", placeholder = TRUE),
   #fileInput("cellDistributionMatrices", label = "Select a file or folder, where the cell state distribution matrices are stored"),
   actionButton("loadDataBtn", "Load Data"),
   

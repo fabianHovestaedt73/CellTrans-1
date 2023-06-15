@@ -17,8 +17,13 @@ server <- function(input, output, session) {
   global <- reactiveValues(datapath = getwd())
   
   output$dir <- renderText({
-    global$datapath
+    paste("test:", global$datapath)
   })
+  
+  output$dir1 <- renderText({
+    paste(input$dir)
+  })
+  
   ## change smth here... if output$dir is null, display getwd() but it doesn't work
   
   observeEvent(ignoreNULL = TRUE,
@@ -52,8 +57,8 @@ server <- function(input, output, session) {
     }
     
     if(input$identityMatrix){
-      expDataMatrix <- matrix(0, nrow = cellnr * (timenr + 1), ncol = cellnr)
-      expDataMatrix[1:cellnr, ] <- diag(cellnr)
+      expData <- matrix(0, nrow = cellnr * (timenr + 1), ncol = cellnr)
+      expData[1:cellnr, ] <- diag(cellnr)
     }
     
     cellnr <- input$cellnr
@@ -68,36 +73,40 @@ server <- function(input, output, session) {
             "; timepoints:", paste(timepoints, collapse = ", "))
     })
     
-    input_path <- input$cellDistributionMatrices
+    input_path <- global$datapath
     
-    # j <- 0
-    # if (file.exists(input_path) && !file.info(input_path)$isdir) {
-    #   # If input_path is a file, treat it as a single timepoint
-    #   expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(input_path, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-    #   while (!isTrMatrix(expData[(j*cellnr+1):((j+1)*cellnr),])) {
-    #     dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ", cellnr, "!"))
-    #     expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",timepoints[j+1],"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-    #   }
-    #   j <- j + 1
-    #   } else if (dir.exists(input_path)) {
-    #     #input_path <- dirname(input_path)
-    #     # If input_path is a directory, read files and sort them
-    #     files <- list.files(input_path, full.names = TRUE)
-    #     files <- files[order(naturalOrder(files))]
-    #     for (i in seq_along(files)) {
-    #       t <- timepoints[i]
-    #       j <- j + 1
-    #       expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(files[i], n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-    #       while (!isTrMatrix(expData[(j*cellnr+1):((j+1)*cellnr),])) {
-    #         dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ", cellnr, "!"))
-    #         expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",t,"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-    #       }
-    #     }
-    #   } else {
-    #     dlgMessage("Invalid input path! Please select a file or a directory.")
-    #     return(NULL)
-    #   }
+    naturalOrder <- function(x) {
+      as.numeric(gsub("[^[:digit:]]", "", x))
+    }
     
+    j <- 0
+    if (file.exists(input_path) && !file.info(input_path)$isdir) {
+      # If input_path is a file, treat it as a single timepoint
+      expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(input_path, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+      while (!isTrMatrix(expData[(j*cellnr+1):((j+1)*cellnr),])) {
+        dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ", cellnr, "!"))
+        expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",timepoints[j+1],"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+      }
+      j <- j + 1
+      } else if (dir.exists(input_path)) {
+        #input_path <- dirname(input_path)
+        # If input_path is a directory, read files and sort them
+        files <- list.files(input_path, full.names = TRUE)
+        files <- files[order(naturalOrder(files))]
+        for (i in seq_along(files)) {
+          t <- timepoints[i]
+          j <- j + 1
+          expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(files[i], n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+          while (!isTrMatrix(expData[(j*cellnr+1):((j+1)*cellnr),])) {
+            dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ", cellnr, "!"))
+            expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",t,"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+          }
+        }
+      } else {
+        dlgMessage("Invalid input path! Please select a file or a directory.")
+        return(NULL)
+      }
+
     
     isTrMatrix <- function(A) {
       sumisOne=TRUE

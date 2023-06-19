@@ -18,7 +18,7 @@
   n=ncol(M) #Rang of Matrix
   transitionMatrix=0
   countQOM=0
-  tau=0.00000001
+  tau=1
   
   for (i in 1:length(t)) {
       #first submatrix in M contains initial matsrix, calculate inverse

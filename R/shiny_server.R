@@ -1,5 +1,7 @@
 # Server logic
 server <- function(input, output, session) {
+  #set the path, where the transition matrices are stored to the working directory
+  setwd("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/case_studies/SW620/transition_matrices")
   # Dynamic UI for cell type names
   output$cellTypes <- renderUI({
     cellnr <- input$cellnr
@@ -48,6 +50,16 @@ server <- function(input, output, session) {
     timeunits <- input$timeunits
     timenr <- input$timenr
     inputFile <- input$inputFile
+    cellnr <- input$cellnr
+    timenr <- input$timenr
+    cell_types <- cellTypes
+    
+    isTrMatrix <- function(A) {
+      sumisOne=TRUE
+      for (i in 1:nrow(A) ) { if (abs(sum(A[i,])-1)>1E-8) {sumisOne=FALSE}
+      }
+      return((all(A>=0)) & (sumisOne))
+    }
     
     # Process the input file
     if (!is.null(inputFile)) {
@@ -60,9 +72,6 @@ server <- function(input, output, session) {
       expData <- matrix(0, nrow = cellnr * (timenr + 1), ncol = cellnr)
       expData[1:cellnr, ] <- diag(cellnr)
     }
-    
-    cellnr <- input$cellnr
-    timenr <- input$timenr
     
     # Output the result
     output$output <- renderPrint({
@@ -106,17 +115,68 @@ server <- function(input, output, session) {
         dlgMessage("Invalid input path! Please select a file or a directory.")
         return(NULL)
       }
-
     
-    isTrMatrix <- function(A) {
-      sumisOne=TRUE
-      for (i in 1:nrow(A) ) { if (abs(sum(A[i,])-1)>1E-8) {sumisOne=FALSE}
+    calculate_transitionMatrix1 <- function(M,t,used_timepoints) {
+      n=ncol(M) #Rang of Matrix
+      transitionMatrix=0
+      countQOM=0
+      tau=0.0001
+      
+      for (i in 1:length(t)) {
+        #first submatrix in M contains initial matsrix, calculate inverse
+        invInitialMatrix=solve(M[1:n,]) #
+        
+        #calculate steps
+        if(i == 1) {
+          real_timeDifference <- t[i]
+        }else {
+          real_timeDifference <- t[i] - t[i-1]
+        }
+        k <- real_timeDifference/tau
+        
+        #derive transition matrices beginning with second submatrix in M
+        if (t[i] %in% used_timepoints ) {
+          
+          if (t[i]>1) {
+            Ptemp <- expm( (1/(k*i)) * logm( (invInitialMatrix%*%M[(i*n+1):((i+1)*n), ]) ,method="Eigen")) # berechnet für t[i]==8 die 8. Matrixwurzel, für t[i]==6 die 6. M.W. usw.
+          } else {    Ptemp=(invInitialMatrix%*%M[(i*n+1):((i+1)*n), ])%^%(1/t[i])}
+          
+          if (isTrMatrix(Ptemp)==FALSE) {
+            assign( paste("P",t[i],sep=""),QOM(Ptemp)  )
+            countQOM=countQOM+1
+          } else {    assign( paste("P",t[i],sep=""),Ptemp)}
+          
+          transitionMatrix=transitionMatrix+get( paste("P",t[i],sep=""))
+        }
       }
-      return((all(A>=0)) & (sumisOne))
-    }  
+      transitionMatrix=(transitionMatrix/(length(used_timepoints)))/tau
+      
+      for (i in 1:n) {
+        transitionMatrix[i, i] <- 1 - sum(transitionMatrix[i, -i])
+      }
+      return(transitionMatrix)
+    }
+    
+    
+    #function celltransitions:
+      datapoints <- timepoints
+      # Print the data points
+      # Rest of your code using the datapoints variable
+      #timepoints <- dlgList(title = "Data point(s) for estimation", multiple = TRUE, choices = input$timepoints)$res
+      trMatrix <- calculate_transitionMatrix1(expData, timepoints, datapoints)
+      MC <- new("markovchain", states = cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
+      
+      print("Results of CellTrans")
+      print("################################")
+      print("used timepoints:")
+      print(datapoints)
+      print(MC)
+      print("predicted equilibrium distribution")
+      print(steadyStates(MC))
+      print("##########################################")
+
   
     })
-  
     session$onSessionEnded(function() {
     stopApp()
   })

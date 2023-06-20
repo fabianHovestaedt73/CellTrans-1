@@ -1,7 +1,9 @@
 # Server logic
 server <- function(input, output, session) {
+  
   #set the path, where the transition matrices are stored to the working directory
   setwd("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/case_studies/SW620/transition_matrices")
+  
   # Dynamic UI for cell type names
   output$cellTypes <- renderUI({
     cellnr <- input$cellnr
@@ -9,36 +11,10 @@ server <- function(input, output, session) {
       textInput(paste0("cellType", i), paste("Name of cell type", i))
     })
   })
-  shinyDirChoose(
-    input,
-    'dir',
-    roots = c(home = '~'),
-    filetypes = c('', 'txt', 'bigWig', "tsv", "csv", "bw")
-  )
   
   global <- reactiveValues(datapath = getwd())
   
-  output$dir <- renderText({
-    paste("test:", global$datapath)
-  })
-  
-  output$dir1 <- renderText({
-    paste(input$dir)
-  })
-  
-  ## change smth here... if output$dir is null, display getwd() but it doesn't work
-  
-  observeEvent(ignoreNULL = TRUE,
-               eventExpr = {
-                 input$dir
-               },
-               handlerExpr = {
-                 if (!"path" %in% names(dir())) return()
-                 home <- normalizePath("~")
-                 global$datapath <-
-                   file.path(home, paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
-               })
-
+  MC <- reactiveVal()
   
   # Load data when button is clicked
   observeEvent(input$loadDataBtn, {
@@ -53,6 +29,7 @@ server <- function(input, output, session) {
     cellnr <- input$cellnr
     timenr <- input$timenr
     cell_types <- cellTypes
+    tau <- input$tauSlider
     
     isTrMatrix <- function(A) {
       sumisOne=TRUE
@@ -72,15 +49,6 @@ server <- function(input, output, session) {
       expData <- matrix(0, nrow = cellnr * (timenr + 1), ncol = cellnr)
       expData[1:cellnr, ] <- diag(cellnr)
     }
-    
-    # Output the result
-    output$output <- renderPrint({
-      paste("cellnr:", cellnr,
-            "; cellTypes:", paste(cellTypes, collapse = ", "),
-            "; timeunits:", timeunits,
-            "; timenr:", timenr,
-            "; timepoints:", paste(timepoints, collapse = ", "))
-    })
     
     input_path <- global$datapath
     
@@ -116,11 +84,11 @@ server <- function(input, output, session) {
         return(NULL)
       }
     
-    calculate_transitionMatrix1 <- function(M,t,used_timepoints) {
+    
+    calculate_transitionMatrix1 <- function(M,t,used_timepoints, tau) {
       n=ncol(M) #Rang of Matrix
       transitionMatrix=0
       countQOM=0
-      tau=0.0001
       
       for (i in 1:length(t)) {
         #first submatrix in M contains initial matsrix, calculate inverse
@@ -149,7 +117,8 @@ server <- function(input, output, session) {
           transitionMatrix=transitionMatrix+get( paste("P",t[i],sep=""))
         }
       }
-      transitionMatrix=(transitionMatrix/(length(used_timepoints)))/tau
+      transitionMatrix <- (transitionMatrix/(length(used_timepoints)))/tau
+      
       
       for (i in 1:n) {
         transitionMatrix[i, i] <- 1 - sum(transitionMatrix[i, -i])
@@ -163,20 +132,56 @@ server <- function(input, output, session) {
       # Print the data points
       # Rest of your code using the datapoints variable
       #timepoints <- dlgList(title = "Data point(s) for estimation", multiple = TRUE, choices = input$timepoints)$res
-      trMatrix <- calculate_transitionMatrix1(expData, timepoints, datapoints)
+      trMatrix <- calculate_transitionMatrix1(expData, timepoints, datapoints, tau)
       MC <- new("markovchain", states = cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
+
       
       print("Results of CellTrans")
       print("################################")
-      print("used timepoints:")
-      print(datapoints)
+      paste("used timepoints: ", datapoints)
+      paste("tau: ", tau)
       print(MC)
       print("predicted equilibrium distribution")
       print(steadyStates(MC))
       print("##########################################")
-
-  
-    })
+      
+      
+      # Convert markovchain object to matrix format
+      M <- as.matrix(MC@transitionMatrix)
+      nodes <- data.frame(id = 1:cellnr)
+      links <- data.frame(from = integer(0), to = integer(0))
+    
+      # Nested loop to generate edges 
+      for (i in 1:nrow(M)) {
+        for (j in 1:ncol(M)) {
+          if (M[i, j] > 0) {
+            edge <- data.frame(from = i, to = j, weight = M[i, j])
+            links <- rbind(links, edge)
+          }
+        }
+      }
+      
+      
+      output$networkPlot <- renderPlot({
+        net <- graph.data.frame(links, nodes, directed=T)
+        #net <- simplify(net, remove.loops = F)
+        V(net)$label <- cell_types
+        E(net)$label <- E(net)$weight
+        E(net)$label.size <- .1
+        E(net)$label <- round(E(net)$label, digits = 4)
+        E(net)$label.color <- "black"
+        E(net)$arrow.size <- .5
+        E(net)$edge.color <- "gray80"
+        #E(net)$width <- E(net)$weight/6 + 0.25
+        #plot(net)
+        E(net)$width <- E(net)$weight * 10 / 3 + 0.5
+        colrs <- c("tomato", "gold")
+        V(net)$color <- colrs
+        edge.start <- get.edges(net, 1:ecount(net))[,1]
+        edge.col <- V(net)$color[edge.start]
+        plot(net, edge.arrow.size=.3, edge.curved=.1, edge.color=edge.col, edge.curved=.1)
+        })
+  })
     session$onSessionEnded(function() {
     stopApp()
   })

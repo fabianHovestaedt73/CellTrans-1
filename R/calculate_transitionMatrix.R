@@ -25,12 +25,14 @@
       invInitialMatrix=solve(M[1:n,]) #
       
       #calculate steps
-      if(i == 1) {
-        real_timeDifference <- t[i]
-      }else {
-        real_timeDifference <- t[i] - t[i-1]
-      }
-      k <- real_timeDifference/tau
+      # if(i == 1) {
+      #   real_timeDifference <- t[i]
+      # }else {
+      #   real_timeDifference <- t[i] - t[i-1]
+      # }
+      
+      real_time <- t[i]
+      k <- real_time/tau
       
       #derive transition matrices beginning with second submatrix in M
       if (t[i] %in% used_timepoints ) {

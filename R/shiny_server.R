@@ -199,11 +199,15 @@ server <- function(input, output, session) {
         #E(net)$width <- E(net)$weight/6 + 0.25
         #plot(net)
         E(net)$width <- E(net)$weight * 10 / 3 + 0.5
-        line_colors <- sample(colors(), cellnr)
-        V(net)$color <- line_colors
+        #line_colors <- sample(colors(), cellnr)
+        V(net)$color <- colrs <- c("tomato", "gold", "green", "lightblue")
         edge.start <- get.edges(net, 1:ecount(net))[,1]
         edge.col <- V(net)$color[edge.start]
-        plot(net, edge.arrow.size=.3, edge.curved=.1, edge.color=edge.col, edge.curved=.1)
+        # Perform Sugiyama layout to get fixed positions
+        layout <- layout_with_sugiyama(net)
+        
+        # Plot the network with fixed node positions
+        plot(net, layout = layout$layout[, 1:2], edge.arrow.size = 0.3, edge.curved = 0.1, edge.color = edge.col)
         })
   })
     session$onSessionEnded(function() {

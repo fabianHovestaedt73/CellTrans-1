@@ -17,8 +17,8 @@ ui <- fluidPage(
       actionButton("loadDataBtn", "Calculate")
     ),
     column(
-      width = 6,
-      plotOutput("networkPlot", width = "100%", height = "600px")
+      width = 9, # Adjusted column width to accommodate the full width of the network plot
+      plotOutput("networkPlot", width = "100%", height = "800px") # Updated width to "100%"
     )
   )
 )

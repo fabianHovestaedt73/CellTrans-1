@@ -159,7 +159,7 @@ server <- function(input, output, session) {
       trMatrix <- calculate_transitionMatrix1(expData, timepoints, datapoints, tau)
       MC <- new("markovchain", states = cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
 
-      
+
       print("Results of CellTrans")
       print("################################")
       paste("used timepoints: ", datapoints)
@@ -187,28 +187,84 @@ server <- function(input, output, session) {
       
       
       output$networkPlot <- renderPlot({
+        set.seed(123)
         net <- graph.data.frame(links, nodes, directed=T)
         #net <- simplify(net, remove.loops = F)
         V(net)$label <- cell_types
         E(net)$label <- E(net)$weight
         E(net)$label.size <- .1
-        E(net)$label <- round(E(net)$label, digits = 4)
+        E(net)$label <- round(E(net)$label, digits = 2)
         E(net)$label.color <- "black"
         E(net)$arrow.size <- .5
         E(net)$edge.color <- "gray80"
         #E(net)$width <- E(net)$weight/6 + 0.25
         #plot(net)
-        E(net)$width <- E(net)$weight * 10 / 3 + 0.5
         #line_colors <- sample(colors(), cellnr)
+        #V(net)$color <- colrs <- c("tomato", "gold")
         V(net)$color <- colrs <- c("tomato", "gold", "green", "lightblue")
         edge.start <- get.edges(net, 1:ecount(net))[,1]
         edge.col <- V(net)$color[edge.start]
         # Perform Sugiyama layout to get fixed positions
-        layout <- layout_with_sugiyama(net)
+        layout <- layout.circle(net)
+        E(net)$width <- E(net)$weight * 100 
+        # Nested loop to generate edges 
+        for (i in 1:n){
+          E(net)$width[(i - 1) * (n + 1) + 1] <- E(net)$width[(i - 1) * (n + 1) + 1] / 7.5
+        }
         
         # Plot the network with fixed node positions
-        plot(net, layout = layout$layout[, 1:2], edge.arrow.size = 0.3, edge.curved = 0.1, edge.color = edge.col)
-        })
+        plot(net, layout=layout,  edge.arrow.size = 0, edge.curved = 0.1, edge.color = edge.col)
+        #plot(net, edge.arrow.size = 0.3, edge.curved = 0.1, edge.color = edge.col)
+      })
+
+      matrix_list <- list()
+      tau_values <- c(1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
+      for (i in 1:length(tau_values)) {
+        trMatrix <- calculate_transitionMatrix1(expData, timepoints, datapoints, tau_values[i])
+        matrix_list[[i]] <- trMatrix
+      }
+
+      n <- ncol(M)
+      observe({
+        updateSelectInput(session, "dropdown", choices = 1:n)
+      })
+      cellstate <- as.integer(input$dropdown)
+      vektor <- c()
+      for (j in 1:length(matrix_list)){
+        vektor <- c(vektor, matrix_list[[j]][cellstate,])
+      }
+      
+      state_values <- list()  # Create a list to store the values for each state
+      for (i in 1:n) {
+        state_values[[i]] <- vektor[seq(i, length(vektor), 4)]  # Assign the values to each state
+      }
+      
+      # Erstelle eine Liste mit den gewünschten Beschriftungen
+      labels <- c()
+      for (i in 1:length(state_values)) {
+        if (i != cellstate) {
+          labels <- c(labels, paste(cellstate, "-->", i))
+        }
+      }
+      
+      output$plot <- renderPlot({
+        tau_values <- c(1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
+        
+        plot(1, type = "n", xlim = range(tau_values), ylim = range(unlist(state_values[-cellstate])), 
+             xlab = "Tau Values", ylab = "Transition Probabilities")
+        
+        colors <- c("red", "blue", "green", "orange")  # Define the colors for the lines
+        
+        for (i in 1:n) {
+          if (i != cellstate) {
+            y <- state_values[[i]]
+            lines(tau_values, y, type = "b", pch = 19, col = colors[i])
+          }
+        }
+        legend("topright", legend = labels, lty = 1, col = 1:length(labels))
+      })
+
+      
   })
     session$onSessionEnded(function() {
     stopApp()

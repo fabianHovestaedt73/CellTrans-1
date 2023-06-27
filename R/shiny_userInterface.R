@@ -7,6 +7,8 @@ library(readr)
 library(tcltk)
 library(tcltk2)
 library(visNetwork)
+library(plotly)
+
 # Define the UI
 ui <- fluidPage(
   titlePanel("CellTrans Shiny App"),
@@ -14,9 +16,9 @@ ui <- fluidPage(
     column(
       width = 3,
       # Input widgets
-      numericInput("cellnr", "Number of cell states", value = 2),
+      numericInput("cellnr", "Number of cell states", value = 4),
       uiOutput("cellTypes"),
-      numericInput("timenr", "Number of time points", value = 12),
+      numericInput("timenr", "Number of time points", value = 5),
       fileInput("inputFile", "Select a text file, where the time points are stored"),
       checkboxInput("identityMatrix", label = "Identity matrix (pure initial cell compositions)", value = TRUE),
       numericInput("tauSlider", "Value of tau", value = 1),
@@ -24,12 +26,10 @@ ui <- fluidPage(
       actionButton("loadDataBtn", "Calculate")
     ),
     column(
-       width = 9, # Adjusted column width to accommodate the full width of the network plot
-      plotOutput("networkPlot", width = "100%", height = "800px") # Updated width to "100%"
-      ),
-    column(
-      width=9,
-      plotOutput("plot", width = "100%")
-    )
+      width = 9,
+      plotOutput("networkPlot", width = "100%", height = "900px"), # Increased height to 1000px
+      plotOutput("plot", width = "100%", height = "500px"),
+      plotOutput("plot1", width = "100%", height = "500px")
+      )
   )
 )

@@ -249,11 +249,40 @@ server <- function(input, output, session) {
       
       output$plot <- renderPlot({
         tau_values <- c(1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
+        log_tau_values <- log(tau_values)  # Calculate the logarithm of tau_values
+        
+        plot(log_tau_values, type = "n", xlim = range(log_tau_values), ylim = range(unlist(state_values[-cellstate])), 
+             xlab = "log(Tau Values)", ylab = "Transition Probabilities")
+        
+        colors <- c("tomato", "gold", "green", "blue")  # Define the colors for the lines
+        
+        for (i in 1:n) {
+          if (i != cellstate) {
+            y <- state_values[[i]]
+            lines(log_tau_values, y, type = "b", pch = 19, col = colors[i])
+          }
+        }
+        
+        colors1 <- c()
+        for (i in 1:n) {
+          if (i != cellstate) {
+            colors1 <- c(colors1, colors[i])
+          }
+        }
+        
+        set.seed(1) # just to get the same random numbers
+        par(xpd=FALSE)
+        legend("left",inset=c(0, 0), legend = labels, lty = 1, col = colors1)
+        par(xpd=TRUE)
+      })
+      
+      output$plot1 <- renderPlot({
+        tau_values <- c(1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
         
         plot(1, type = "n", xlim = range(tau_values), ylim = range(unlist(state_values[-cellstate])), 
              xlab = "Tau Values", ylab = "Transition Probabilities")
         
-        colors <- c("red", "blue", "green", "orange")  # Define the colors for the lines
+        colors <- c("tomato", "gold", "green", "blue")  # Define the colors for the lines
         
         for (i in 1:n) {
           if (i != cellstate) {
@@ -261,7 +290,16 @@ server <- function(input, output, session) {
             lines(tau_values, y, type = "b", pch = 19, col = colors[i])
           }
         }
-        legend("topright", legend = labels, lty = 1, col = 1:length(labels))
+        colors1 <- c()
+        for (i in 1:n) {
+          if (i != cellstate) {
+            colors1 <- c(colors1, colors[i])
+          }
+        }
+        set.seed(1) # just to get the same random numbers
+        par(xpd=FALSE)
+        legend("left",inset=c(0, 0), legend = labels, lty = 1, col = colors1)
+        par(xpd=TRUE)
       })
 
       

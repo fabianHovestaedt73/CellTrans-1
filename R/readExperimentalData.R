@@ -4,9 +4,33 @@
 #' @keywords initial experimental matrix, cell distribution matrices
 #' @export
 
+library(devtools)
+library(readr)
+library(tcltk)
+library(shinyFiles)
+library(tcltk2)
+library(shiny)
+library(visNetwork)
+library(DiagrammeR)
+
+#load_all("/home/fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/")
+#load_all("C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/")
+#setwd("C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R")
+
+
+setwd("C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/3. Semester/FuE/R")
+# --> vor Start diesen Befehl ausführen: load_all("C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/3. Semester/FuE/R")
+
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/celltransitions.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/calculate_transitionMatrix.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/isTrMatrix.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/shiny_userInterface.R")
+# source("~/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/shiny_server.R")
+
+
+shinyApp(ui, server)
 
 readExperimentalData <- function()  {
-  
   dlgMessage("Welcome to CellTrans!\n Please assure that you have prepared appropriate files containing the cell state distribution matrices representing your experimental data.")
   cellnr  <- 	as.integer(dlgInput("Number of cell states")$res)
   #Read cell type names
@@ -14,21 +38,25 @@ readExperimentalData <- function()  {
   for (i in 1:cellnr)  {
     cell_types[i] <- dlgInput(paste("Name of cell type", i))$res
   }
+  
+  
   #Ask for timeunits and timepoints
   timeunits<-dlgList(title="Time step length",c("minutes","hours","days","weeks","months","cell divisions"))$res
   timenr<-as.integer(dlgInput("Number of time points")$res)
   
-  timepoints=rep(0,timenr)
-  for (i in 1:timenr)  {
-    timepoints[i] <-dlgInput(paste0("Timepoint ",i))$res
-  }
-  timepoints=as.numeric(timepoints)
   
+  # Create a file chooser dialog to select the input file
+  selected_file <- tclvalue(tkgetOpenFile())
+  timepoints <- read_lines(selected_file)
+  # Determine the separator based on the contents of the file
+  separator <- ifelse(grepl(",", timepoints), ",", 
+                      ifelse(grepl(";", timepoints), ";", " "))
+  timepoints <- strsplit(timepoints, separator)[[1]]
+  timepoints <- as.numeric(timepoints)
   
   
   #Create matrix for cell distribution matrices incuding initial experimental matrix
   expData=matrix(0, nrow=cellnr*(timenr+1),ncol=cellnr)
-  
   #Ask for initial input matrix
   res=""
   while (res=="") {
@@ -48,24 +76,59 @@ readExperimentalData <- function()  {
             expData[1:cellnr,]=matrix(scan(dlgOpen(title = " Select initial experimental matrix.")$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
           }  
         }
-      
-      
       break}
       
     }
   }
   
   
-  #Ask for cell distribution matrices
-  j=0
-  for (t in timepoints) {
-    j=j+1
-    expData[(j*cellnr+1):((j+1)*cellnr),]=matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",t,"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-    while (!isTrMatrix(  expData[(j*cellnr+1):((j+1)*cellnr),]  ) ) {dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ",cellnr,"!"))
-      expData[(j*cellnr+1):((j+1)*cellnr),]=matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",t,"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
-    }
+  naturalOrder <- function(x) {
+    as.numeric(gsub("[^[:digit:]]", "", x))
   }
+  
+  select_file_or_dir <- function() {
+    #   Abfrage, ob Datei oder Ordner ausgewählt werden soll
+    choice <- utils::menu(c("File", "Folder"), title = "Select a file or folder, where the cell state distribution matrices are stored")
+    if (choice == "File") {
+      # Datei auswählen
+      input_path <- file.choose()
+    } else {
+      # Ordner auswählen
+      input_path <- tclvalue(tkchooseDirectory(title="Select a Folder"))
+    }
+    # Rückgabe des ausgewählten Pfads
+    return(input_path) 
+  }
+  
+  input_path <- select_file_or_dir()
+  
+  j <- 0
+  if (file.exists(input_path) && !file.info(input_path)$isdir) {
+    # If input_path is a file, treat it as a single timepoint
+    expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(input_path, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+    while (!isTrMatrix(expData[(j*cellnr+1):((j+1)*cellnr),])) {
+      dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ", cellnr, "!"))
+      expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",timepoints[j+1],"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+    }
+    j <- j + 1
+  } else if (dir.exists(input_path)) {
+    # If input_path is a directory, read files and sort them
+    files <- list.files(input_path, full.names = TRUE)
+    files <- files[order(naturalOrder(files))]
+    for (i in seq_along(files)) {
+      t <- timepoints[i]
+      j <- j + 1
+      expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(files[i], n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+      while (!isTrMatrix(expData[(j*cellnr+1):((j+1)*cellnr),])) {
+        dlgMessage(paste("Try again! Selected file does not contain an initial setup matrix of dimension ", cellnr, "!"))
+        expData[(j*cellnr+1):((j+1)*cellnr),] <- matrix(scan(dlgOpen(title = paste0("Select cell distribution matrix at t=",t,"."))$res, n = cellnr*cellnr), cellnr, cellnr, byrow = TRUE)
+      }
+    }
+  } else {
+    dlgMessage("Invalid input path! Please select a file or a directory.")
+    return(NULL)
+  }
+  
   return(list("cellnr"=cellnr, "cell_types"=cell_types, "timeunits"=timeunits, "timenr"=timenr, "timepoints"=timepoints, "experimentalData"=expData))
-  
-  
 }
+

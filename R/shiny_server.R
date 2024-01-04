@@ -1,8 +1,10 @@
+#setwd("C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/3. Semester/FuE/R")
+#library("CellTrans")
+#shinyApp(ui, server)
+
+
 # Server logic
 server <- function(input, output, session) {
-  
-  #set the path, where the transition matrices are stored to the working directory
-  setwd("C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/3. Semester/FuE/case_studies/ADAPT_CD15CD44/transition_matrices")
   
   output$cellTypes <- renderUI({
     cellnr <- input$cellnr
@@ -12,7 +14,6 @@ server <- function(input, output, session) {
   })
   
   global <- reactiveValues(datapath = getwd())
-  
   MC <- reactiveVal()
   
   # Load data when button is clicked
@@ -123,7 +124,10 @@ server <- function(input, output, session) {
         if (t[i] %in% used_timepoints ) {
           
           if (t[i]>1) {
-            Ptemp <- expm( (1/(k)) * logm( (invInitialMatrix%*%M[(i*n+1):((i+1)*n), ]) ,method="Eigen")) # berechnet für t[i]==8 die 8. Matrixwurzel, für t[i]==6 die 6. M.W. usw.
+            #vorher: 
+            Ptemp <- expm( (1/(k)) * logm( (invInitialMatrix%*%M[(i*n+1):((i+1)*n), ]) ,method="Eigen"))
+            #jetzt:
+            #Ptemp <- expm( (1/(t[i])) * logm( (invInitialMatrix%*%M[(i*n+1):((i+1)*n), ]) ,method="Eigen")) # berechnet für t[i]==8 die 8. Matrixwurzel, für t[i]==6 die 6. M.W. usw.
           } else {    Ptemp=(invInitialMatrix%*%M[(i*n+1):((i+1)*n), ])%^%(1/t[i])}
           
           if (isTrMatrix(Ptemp)==FALSE) {
@@ -136,15 +140,20 @@ server <- function(input, output, session) {
       }
       
       # P/tau = Q + I #fehlerhaft?
-      transitionMatrix <- (transitionMatrix/(length(used_timepoints)))/tau
-      browser()
+      #vorher: 
+      #transitionMatrix <- (transitionMatrix/(length(used_timepoints)))/tau
+      #jetzt:
+      transitionMatrix <- transitionMatrix/(length(used_timepoints))
       
+      #jetzt:
+      # transitionMatrix <- (transitionMatrix/(length(used_timepoints)))
       
       
       # P/tau - I = Q ... --> Zeilensummen aber 1 und nicht 0
-      for (i in 1:n) {
-        transitionMatrix[i, i] <- 1 - sum(transitionMatrix[i, -i])
-      }
+      #vorher:
+      # for (i in 1:n) {
+      #   transitionMatrix[i, i] <- 1 - sum(transitionMatrix[i, -i])
+      # }
       
       # Ergebnis ist keine Ratenmatrix sondern eine Übergangsmatrix mit sehr kleinem Zeittakt?
       return(transitionMatrix)
@@ -154,6 +163,7 @@ server <- function(input, output, session) {
     # Print the data points
     # Rest of your code using the datapoints variable
     #timepoints <- dlgList(title = "Data point(s) for estimation", multiple = TRUE, choices = input$timepoints)$res
+    browser()
     trMatrix <- calculate_transitionMatrix1(expData, timepoints, datapoints, tau)
     MC <- new("markovchain", states = cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
     
@@ -170,6 +180,8 @@ server <- function(input, output, session) {
     cat("\n")
     cat("\n")
     
+    # I <- diag(n)
+    # Ratio_M <- (1 / tau) * (transitionMatrix - I)
     
     
     # Convert markovchain object to matrix format

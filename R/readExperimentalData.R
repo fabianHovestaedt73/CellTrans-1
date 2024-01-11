@@ -4,14 +4,14 @@
 #' @keywords initial experimental matrix, cell distribution matrices
 #' @export
 
-library(devtools)
-library(readr)
-library(tcltk)
-library(shinyFiles)
-library(tcltk2)
-library(shiny)
-library(visNetwork)
-library(DiagrammeR)
+# library(devtools)
+# library(readr)
+# library(tcltk)
+# library(shinyFiles)
+# library(tcltk2)
+# library(shiny)
+# library(visNetwork)
+# library(DiagrammeR)
 
 #load_all("/home/fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/")
 #load_all("C:/Users/Fabian/OneDrive/Dokumente/Master_Angewandte_Informatik/2. Semester/FuE2/CellTrans-1/R/")

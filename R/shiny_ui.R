@@ -2,9 +2,8 @@
 #'
 #' UI definition for the CellTrans2 Shiny App, including input widgets for configuring the analysis.
 #' @export
-#' call: shinyApp(shiny_ui, shiny_server)
 
-
+#call: shinyApp(shiny_ui, shiny_server)
 shiny_ui <- fluidPage(
   titlePanel("CellTrans Shiny App"),
   fluidRow(

@@ -104,6 +104,7 @@ shiny_server <- function(input, output, session) {
     trMatrix <- calculate_transitionMatrix(expData, timepoints, datapoints, tau)
     print("trMatrix:")
     print(trMatrix)
+    P <- trMatrix
     MC <- new("markovchain", states = cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
 
     cat("\n")
@@ -176,7 +177,9 @@ shiny_server <- function(input, output, session) {
       E(net)$label <- round(E(net)$label, digits = 3)
       E(net)$label.color <- "black"
       E(net)$edge.color <- "gray80"
-      V(net)$color <- colrs <- c("tomato", "gold", "green", "lightblue")
+      allColors <- c("tomato", "gold", "green", "lightblue", "purple", "orange", "cyan", "pink", "brown", "gray")
+      selectedColors <- allColors[1:cellnr]
+      V(net)$color <- selectedColors
       edge.start <- get.edges(net, 1:ecount(net))[, 1]
       edge.col <- V(net)$color[edge.start]
       layout <- layout.circle(net)
@@ -235,7 +238,7 @@ shiny_server <- function(input, output, session) {
       # Create a list to store the values for each state
       state_values <- list()
       for (i in 1:n) {
-        state_values[[i]] <- vektor[seq(i, length(vektor), 4)]  # Assign the values to each state
+        state_values[[i]] <- vektor[seq(i, length(vektor), cellnr)]  # Assign the values to each state
       }
 
       # Create a list with the desired labelling
@@ -295,23 +298,19 @@ shiny_server <- function(input, output, session) {
       
       
       
-      # #_________________________________________________________________________
-      # #trying to recreate distribution matrices from P
-      # 
-      # # Transition probability matrix P
-      # P <- matrix(c(0.96789393, 0.014941325, 0.0139548884, 0.003209861,
-      #               0.03796042, 0.956398647, 0.0001849221, 0.005456010,
-      #               0.07402486, 0.001521336, 0.9150223562, 0.009431451,
-      #               0.01270999, 0.099836926, 0.0323102065, 0.855142879), nrow = 4, byrow = TRUE)
+      #_________________________________________________________________________
+      #trying to recreate distribution matrices from P
+      # browser()
+      # P <- P
       # 
       # # Initial distribution
-      # pi_0 <- diag(4)
+      # pi_0 <- diag(cellnr)
       # 
       # # Time steps
-      # t <- 5
+      # t <- 12
       # 
       # # Calculate distribution after t time steps
-      # pi_t <- pi_0 %*% (P^t)
+      # pi_t <- pi_0 %*% (P %^% t)
       # 
       # # Output
       # # print("Initial Distribution:")
@@ -319,7 +318,7 @@ shiny_server <- function(input, output, session) {
       # print(paste("Distribution after", t, "time steps:"))
       # print(pi_t)
 
-      browser()
+      
 
       #_________________________________________________________________________
       #plot interaction graph
@@ -330,8 +329,9 @@ shiny_server <- function(input, output, session) {
         plot(log_tau_values, type = "n", xlim = range(log_tau_values), ylim = range(unlist(state_values[-cellstate])),
              xlab = "log(tau)", ylab="", cex.lab = 2.0, cex.axis = 1.5, cex.main = 1.5, cex.sub = 1.5)
 
-        colors <- c("tomato", "gold", "green", "blue")  # Define the colors for the lines
-
+        allColors <- c("tomato", "gold", "green", "lightblue", "purple", "orange", "cyan", "pink", "brown", "gray")
+        colors <- allColors[1:cellnr]
+        
         for (i in 1:n) {
           if (i != cellstate) {
             y <- state_values[[i]]

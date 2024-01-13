@@ -58,7 +58,7 @@ celltrans_plot <- function(expData, timepoints, datapoints, tau, cellnr, cell_ty
     plot(main=paste0("Experiment with initial distribution \n(", paste(cell_types,collapse=", "),") = (",paste(initialcelldistr,collapse = ", "),")"),1,1,type="n",xlab=timeunits, ylab=paste("fraction of cells"),ylim=c(0,y_bis),xlim=c(0,maxtime),cex.main=0.8)
     for (step in 1:maxtime) {
       data=rbind2(initialcelldistr,t(sapply(1:maxtime,
-                                            function (step) {initialcelldistr %*% (trMatrix %^% step)})))[,statestoplot]
+                                            function (step) {initialcelldistr %*% (trMatrix %^% (step/tau))})))[,statestoplot]
     }
     matplot(add=T,x=c(0:maxtime),y=data,lty=1,type="l",lwd=2,col=colors[statestoplot])
     legend("topright",lwd="2", legend=cell_types[statestoplot],col=colors[statestoplot])

@@ -28,7 +28,7 @@ shiny_server <- function(input, output, session) {
     cellTypes <- sapply(seq_len(cellnr), function(i) {
       input[[paste0("cellType", i)]]
     })
-    timeunits <- input$timeunits
+    timeunits <- "days"
     timenr <- input$timenr
     inputFile <- input$inputFile
     input_path <- input$inputFolder
@@ -36,51 +36,14 @@ shiny_server <- function(input, output, session) {
     timenr <- input$timenr
     cell_types <- cellTypes
     tau <- input$tauSlider
-
-
-    #___________________________________________________________________________
-    # Check for transition matrix.
-    #
-    # Verification whether a matrix is a stochastic matrix of a Markov process or not, i.e. with non-negative entries and row sums equal to one.
-    # param A The matrix that is checked to be a transition matrix.
-    # keywords: transition matrix, Matrix process
-
-    isTrMatrix <- function(A) {
-      sumisOne=TRUE
-      for (i in 1:nrow(A) ) { if (abs(sum(A[i,])-1)>1E-5) {sumisOne=FALSE}
-      }
-      return((all(A>=0)) & (sumisOne))
-    }
-    #___________________________________________________________________________
-
-    #___________________________________________________________________________
-    # Quasi-optimization of a matrix root to a stochastic matrix.
-    #
-    # QOM finds a transition matrix that is as close as possible, with respect to the Euclidean distance of the rows, to the fractional root of a given transition matrix. If the argument is a transition matrix, this matrix is returned unchanged.
-    # parameters: A - The fractional root of a matrix that shall be regularized.
-    # keywords: QOM, matrix root regularization
-
-    QOM<-function(A) {
-      n=nrow(A)
-      for (i in 1:n)
-      {
-        repeat
-        {
-          non_negative_components=sum(A[i,]>0)
-          diff=(sum(A[i,])-1)/non_negative_components
-          for (j in 1:n) {
-            if (A[i,j]>0) {
-              A[i,j]=A[i,j]-diff
-            }
-          }
-          if (all(A[i,]>=0)) {break}
-          for (j in 1:n) {
-            if (A[i,j]<0) A[i,j]=0 }
-        }
-      }
-      return(A)
-    }
-    #___________________________________________________________________________
+    
+    showEquilibrium <- input$showTimeToEquilibrium
+    distributionForEquilibrium <- input$initialDistributionForEquilibrium
+    tolerance <- input$tolerance
+    
+    showPlot <- input$showPlot
+    showPlot_PDF <- input$showPlot_PDF
+    pathToPDF <- input$pathToPlot
 
 
     # read timepoints file
@@ -135,57 +98,12 @@ shiny_server <- function(input, output, session) {
 
 
     #___________________________________________________________________________
-    # Calculation of the transition matrix.
-    #
-    # This function derives the transition matrix which contains the transition probabilitites between the distinct cell states.
-    # param: M - Matrix containing all experimental data: the initial experimental setup matrix and the experimental cell state distribution matrices.
-    # param: t - This A vector containing all timepoints at which the cell state distributions have been experimentally measured. ---> realTime
-    # param - used_timepoints A vector with the timepoints utilized to estimate the transition matrix. ---> Tau
-
-    # keywords: transition matrix, Matrix process
-
-    calculate_transitionMatrix <- function(M,t,used_timepoints, tau) {
-      n=ncol(M) #Rang of Matrix
-      transitionMatrix=0
-      countQOM=0
-
-      for (i in 1:length(t)) {
-        # first submatrix in M contains initial matsrix, calculate inverse
-        invInitialMatrix=solve(M[1:n,]) #
-
-        # After the integration of tau, a different matrix root than the original value must be calculated at a certain point in time, so this value is calculated here. For example, for a value tau=0.5, the 4th matrix root is now calculated instead of the 2nd matrix root, as 2/0.5=4.
-        real_time <- t[i]
-        k <- real_time/tau
-
-        # derive transition matrices beginning with second submatrix in M
-        if (t[i] %in% used_timepoints ) {
-
-          if (t[i]>1) {
-            Ptemp <- expm( (1/(k)) * logm( (invInitialMatrix%*%M[(i*n+1):((i+1)*n), ]) ,method="Eigen"))
-          }
-          else {    Ptemp=(invInitialMatrix%*%M[(i*n+1):((i+1)*n), ])%^%(1/t[i])}
-
-          if (isTrMatrix(Ptemp)==FALSE) {
-            assign( paste("P",t[i],sep=""),QOM(Ptemp)  )
-            countQOM=countQOM+1
-          }
-          else {    assign( paste("P",t[i],sep=""),Ptemp)}
-
-          transitionMatrix=transitionMatrix+get( paste("P",t[i],sep=""))
-        }
-      }
-
-      transitionMatrix <- transitionMatrix/(length(used_timepoints))
-
-      return(transitionMatrix)
-    }
-    #___________________________________________________________________________
-
-    #___________________________________________________________________________
     # Printing the results of CellTrans.
     # This lines derives and prints the transition probabilities and the predicted equilibrium distribution of the cell state proportions.
     datapoints <- timepoints
     trMatrix <- calculate_transitionMatrix(expData, timepoints, datapoints, tau)
+    print("trMatrix:")
+    print(trMatrix)
     MC <- new("markovchain", states = cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
 
     cat("\n")
@@ -199,9 +117,27 @@ shiny_server <- function(input, output, session) {
     print(steadyStates(MC))
     cat("\n")
     #___________________________________________________________________________
+    
+    
+    
+    #___________________________________________________________________________
+    datapoints <- timepoints
+    if(showPlot){
+      celltrans_plot(expData, timepoints, datapoints, tau, cellnr, cell_types, timeunits)
+    }
+    
+    if(showEquilibrium){
+      distributionForEquilibrium <- as.numeric(strsplit(distributionForEquilibrium, ", ")[[1]])
+      timeToEquilibrium(expData, timepoints, datapoints, cell_types, timeunits, distributionForEquilibrium, tolerance)
+    }
+    
+    if(showPlot_PDF){
+      celltrans_plotPDF(expData, timepoints, datapoints, cell_types, timeunits, cellnr, pathToPDF, tau)
+    }
+    #___________________________________________________________________________
 
-
-
+    
+    
     #calculate Q as ratio matrix
     n <- ncol(trMatrix)
     I <- diag(n)
@@ -209,7 +145,6 @@ shiny_server <- function(input, output, session) {
     for (i in 1:n) {
       Ratio_M[i, i] <- Ratio_M[i, i] * -1
     }
-
 
     # Convert markovchain object to matrix format
     M <- as.matrix(Ratio_M)
@@ -320,50 +255,73 @@ shiny_server <- function(input, output, session) {
 
 
       #_________________________________________________________________________
-      # # trying to create distribution matrices from calculated rate matrix
-      # #
+      # trying to create distribution matrices from calculated rate matrix
+
+
+      #---> todo: Anstatt aus P die Verteilungsmatrizen W zu erzeugen, werden nun aus Q die W's erzeugt. Dafür: Matrixexponential
+
       # #calc new distribution matrices
       # final_tau <- 0.001
       # trMatrix <- calculate_transitionMatrix(expData, timepoints, datapoints, final_tau)
       # Ratio_M <- (1 / final_tau) * (trMatrix - I)
-      #
-      #
-      # #---> todo: Anstatt aus P die Verteilungsmatrizen W zu erzeugen, werden nun aus Q die W's erzeugt. Dafür: Matrixexponential
-      #
-      # print("#####################___tau = 0.001____###############")
-      # P <- (Ratio_M * final_tau ) + I
-      # print(P)
-      #
-      #
-      # # Create the folder if it does not exist
-      # dir.create("new_distribution_matrices", showWarnings = FALSE)
-      #
-      # # Function for generating a unique file name
-      # generateUniqueFilename <- function(matrixName) {
-      #   paste("new_distribution_matrices", "/", matrixName, ".txt", sep = "")
+      
+      # Ratenmatrix Q
+      # Q <- matrix(c(-0.034637232, 0.0153688445, 1.569748e-02, 0.003570910,
+      #               0.040104199, -0.0468738520, 7.006824e-05, 0.006699584,
+      #               0.083745811, 0.0006095134, -9.475599e-02, 0.010400662,
+      #               0.007921515, 0.1293745739, 4.135663e-02, -0.178652717), nrow = 4, byrow = TRUE)
+      # 
+      # # Anfangsverteilung: Einheitsmatrix vom Rang 4
+      # pi_0 <- diag(4)
+      # 
+      # # Iterate over time steps from 0 to 100
+      # for (t in 0:80) {
+      #   # Matrixexponentialfunktion berechnen
+      #   expQt <- expm::expm(Q * t)
+      #   
+      #   # # Verteilung zum Zeitpunkt t berechnen
+      #   # pi_t <- pi_0 %*% expQt
+      #   
+      #   # Ausgabe
+      #   cat("Zeitschritt:", t, "\n")
+      #   cat("Matrixexponentialfunktion:\n")
+      #   print(expQt)
+      #   # cat("Verteilung zum Zeitpunkt t:\n")
+      #   # print(pi_t)
+      #   cat("=============================================\n")
       # }
-      #
-      # W5 <- as.matrix(P^5)
-      # W13 <- as.matrix(P^13)
-      # W23 <- as.matrix(P^23)
-      # W34 <- as.matrix(P^34)
-      # W68 <- as.matrix(P^68)
-      #
-      # # Function for saving a matrix in a text file
-      # saveMatrixToFile <- function(matrix, matrixName) {
-      #   filename <- generateUniqueFilename(matrixName)
-      #   write.table(matrix, file = filename, sep = "\t", col.names = FALSE, row.names = FALSE, quote = FALSE)
-      # }
-      #
-      # # Save the matrices in separate text filesteien
-      # saveMatrixToFile(W5, "W5")
-      # saveMatrixToFile(W13, "W13")
-      # saveMatrixToFile(W23, "W23")
-      # saveMatrixToFile(W34, "W34")
-      # saveMatrixToFile(W68, "W68")
+      
       #_________________________________________________________________________
+      
+      
+      
+      # #_________________________________________________________________________
+      # #trying to recreate distribution matrices from P
+      # 
+      # # Transition probability matrix P
+      # P <- matrix(c(0.96789393, 0.014941325, 0.0139548884, 0.003209861,
+      #               0.03796042, 0.956398647, 0.0001849221, 0.005456010,
+      #               0.07402486, 0.001521336, 0.9150223562, 0.009431451,
+      #               0.01270999, 0.099836926, 0.0323102065, 0.855142879), nrow = 4, byrow = TRUE)
+      # 
+      # # Initial distribution
+      # pi_0 <- diag(4)
+      # 
+      # # Time steps
+      # t <- 5
+      # 
+      # # Calculate distribution after t time steps
+      # pi_t <- pi_0 %*% (P^t)
+      # 
+      # # Output
+      # # print("Initial Distribution:")
+      # # print(pi_0)
+      # print(paste("Distribution after", t, "time steps:"))
+      # print(pi_t)
 
+      browser()
 
+      #_________________________________________________________________________
       #plot interaction graph
       output$plot <- renderPlot({
         tau_values <- c(2.5, 2, 1.5, 1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)

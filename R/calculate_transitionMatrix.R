@@ -20,6 +20,7 @@ calculate_transitionMatrix <- function(M,t,used_timepoints, tau) {
     # After the integration of tau, a different matrix root than the original value must be calculated at a certain point in time, so this value is calculated here. For example, for a value tau=0.5, the 4th matrix root is now calculated instead of the 2nd matrix root, as 2/0.5=4.
     real_time <- t[i]
     k <- real_time/tau
+    #k <- k*2
     
     # derive transition matrices beginning with second submatrix in M
     if (t[i] %in% used_timepoints ) {

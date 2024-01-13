@@ -102,9 +102,12 @@ shiny_server <- function(input, output, session) {
     # This lines derives and prints the transition probabilities and the predicted equilibrium distribution of the cell state proportions.
     datapoints <- timepoints
     trMatrix <- calculate_transitionMatrix(expData, timepoints, datapoints, tau)
-    print("trMatrix:")
-    print(trMatrix)
+    #browser()
     P <- trMatrix
+    if (isTrMatrix(P)==FALSE) {
+      P <- QOM(P)
+    }
+    
     MC <- new("markovchain", states = cell_types, transitionMatrix = trMatrix, name = "Markov Chain")
 
     cat("\n")
@@ -129,7 +132,7 @@ shiny_server <- function(input, output, session) {
     
     if(showEquilibrium){
       distributionForEquilibrium <- as.numeric(strsplit(distributionForEquilibrium, ", ")[[1]])
-      timeToEquilibrium(expData, timepoints, datapoints, cell_types, timeunits, distributionForEquilibrium, tolerance)
+      timeToEquilibrium(expData, timepoints, datapoints, cell_types, timeunits, distributionForEquilibrium, tolerance, tau)
     }
     
     if(showPlot_PDF){
@@ -318,7 +321,8 @@ shiny_server <- function(input, output, session) {
       # print(paste("Distribution after", t, "time steps:"))
       # print(pi_t)
 
-      
+   
+      # transitionMatrix <- transitionMatrix %^% (1/2)
 
       #_________________________________________________________________________
       #plot interaction graph

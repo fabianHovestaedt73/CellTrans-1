@@ -9,10 +9,10 @@
 
 
 
-timeToEquilibrium <- function(expData, timepoints, datapoints, cell_types, timeunits, distributionForEquilibrium, tol) {
-  timepoints<-dlgList(title="Data point(s) for estimation",multiple=TRUE, choices=timepoints)$res  
+timeToEquilibrium <- function(expData, timepoints, datapoints, cell_types, timeunits, distributionForEquilibrium, tol, tau) {
+  #timepoints<-dlgList(title="Data point(s) for estimation",multiple=TRUE, choices=timepoints)$res  
   
-  trMatrix=calculate_transitionMatrix(expData,timepoints,timepoints)
+  trMatrix=calculate_transitionMatrix(expData,timepoints,timepoints, tau)
   require(markovchain)
   MC <- new("markovchain", states = cell_types,
             transitionMatrix = trMatrix,

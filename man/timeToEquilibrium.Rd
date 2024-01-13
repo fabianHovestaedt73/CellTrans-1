@@ -11,7 +11,8 @@ timeToEquilibrium(
   cell_types,
   timeunits,
   distributionForEquilibrium,
-  tol
+  tol,
+  tau
 )
 }
 \arguments{

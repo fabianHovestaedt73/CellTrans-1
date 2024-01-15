@@ -70,11 +70,23 @@ celltrans_plot <- function(expData, timepoints, datapoints, tau, cellnr, cell_ty
       #plot datapoints
       for (j in 1:length(timepoints)) {
         points(timepoints[j],expData[j*cellnr+k,i],col=colors[i],lwd=2,pch=21,bg=colors[i])
+        error <- error + abs(data[timepoints[j], i] - expData[j*cellnr+k,i])
+        # print("data[timepoint[j], i]:")
+        # print(data[timepoints[j], i])
+        # print("expData[j*cellnr+k,i]")
+        # print(expData[j*cellnr+k,i])
+        # print("error:")
+        # print(error)
+        
       }
+      
       if (control=="yes") {
         points(controltime,controlvector[i],col=colors[i],lwd=2,pch=21,bg=colors[i])
         
       }
     }
+    print("Error in plot ")
+    mse <- error / (length(statestoplot) * length(timepoints))
   }
+  
 }

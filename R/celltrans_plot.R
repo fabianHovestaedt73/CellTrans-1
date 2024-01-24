@@ -53,7 +53,12 @@ celltrans_plot <- function(expData, timepoints, datapoints, tau, cellnr, cell_ty
   #colors=c(rgb(192/255,0,0),rgb(1,0,0),rgb(1,80/255,80/255),rgb(1,124/255,128/255),rgb(32/255,56/255,100/255),rgb(0,102/255,1),rgb(0,176/255,249/255),rgb(204/255,1,1),rgb(56/255,87/255,35/255),rgb(84/255,130/255,53/255),rgb(146/255,208/255,80/255),rgb(197/255,224/255,180/255),rgb(191/255,144/255,0),rgb(1,192/255,0),rgb(1,1,0),rgb(1,1,204/255))
   
   
+
+  
+  
   for (k in initExp) {
+    error <- 0
+    mse <- 0
     initialcelldistr=expData[k, ]
     plot(main=paste0("Experiment with initial distribution \n(", paste(cell_types,collapse=", "),") = (",paste(initialcelldistr,collapse = ", "),")"),1,1,type="n",xlab=timeunits, ylab=paste("fraction of cells"),ylim=c(0,y_bis),xlim=c(0,maxtime),cex.main=0.8)
     for (step in 1:maxtime) {
@@ -71,12 +76,6 @@ celltrans_plot <- function(expData, timepoints, datapoints, tau, cellnr, cell_ty
       for (j in 1:length(timepoints)) {
         points(timepoints[j],expData[j*cellnr+k,i],col=colors[i],lwd=2,pch=21,bg=colors[i])
         error <- error + abs(data[timepoints[j], i] - expData[j*cellnr+k,i])
-        # print("data[timepoint[j], i]:")
-        # print(data[timepoints[j], i])
-        # print("expData[j*cellnr+k,i]")
-        # print(expData[j*cellnr+k,i])
-        # print("error:")
-        # print(error)
         
       }
       
@@ -85,8 +84,9 @@ celltrans_plot <- function(expData, timepoints, datapoints, tau, cellnr, cell_ty
         
       }
     }
-    print("Error in plot ")
-    mse <- error / (length(statestoplot) * length(timepoints))
+    print(paste("Error in plot ", k))
+    print(paste("error:", error))
+    cat("\n")
   }
   
 }

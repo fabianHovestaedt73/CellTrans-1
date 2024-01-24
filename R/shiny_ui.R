@@ -5,7 +5,7 @@
 
 #call: shinyApp(shiny_ui, shiny_server)
 shiny_ui <- fluidPage(
-  titlePanel("CellTrans Shiny App"),
+  titlePanel("CellTrans2 Shiny App"),
   fluidRow(
     column(
       width = 3,

@@ -58,6 +58,19 @@ celltrans_plotPDF <- function(expData, timepoints, datapoints, cell_types, timeu
   #ADAPT colors:
   #colors=c(rgb(192/255,0,0),rgb(1,0,0),rgb(1,80/255,80/255),rgb(1,124/255,128/255),rgb(32/255,56/255,100/255),rgb(0,102/255,1),rgb(0,176/255,249/255),rgb(204/255,1,1),rgb(56/255,87/255,35/255),rgb(84/255,130/255,53/255),rgb(146/255,208/255,80/255),rgb(197/255,224/255,180/255),rgb(191/255,144/255,0),rgb(1,192/255,0),rgb(1,1,0),rgb(1,1,204/255))
   
+  #export estimates for distribution matrices
+  #browser()
+  for (i in 1:length(timepoints)) {
+    n <- nrow(trMatrix)
+    initialdistr <- diag(n)
+    Wtemp <- initialdistr %*% (trMatrix %^% (timepoints[i]/tau))
+    
+    filename <- file.path(pathToPDF, paste0("Wtemp_", as.character(timepoints[i]), ".txt"))
+    
+    write.table(Wtemp, file = filename, sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
+  }
+  
+  
   
   for (k in initExp) {
     initialcelldistr=expData[k, ]

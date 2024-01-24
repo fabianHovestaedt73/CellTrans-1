@@ -102,7 +102,6 @@ shiny_server <- function(input, output, session) {
     # This lines derives and prints the transition probabilities and the predicted equilibrium distribution of the cell state proportions.
     datapoints <- timepoints
     trMatrix <- calculate_transitionMatrix(expData, timepoints, datapoints, tau)
-    #browser()
     P <- trMatrix
     if (isTrMatrix(P)==FALSE) {
       P <- QOM(P)
@@ -112,7 +111,7 @@ shiny_server <- function(input, output, session) {
 
     cat("\n")
     cat("\n")
-    print("#################________Results of CellTrans_____########################")
+    print("###___Results of CellTrans___###")
     cat("\n")
     print(paste("_____tau_____ :", tau))
     cat("\n")
@@ -204,7 +203,7 @@ shiny_server <- function(input, output, session) {
       m <- n * n
       delete_edges <- c()
       for (i in 1:m) {
-        if (E(net)$weight[i] < 0.005) {
+        if (E(net)$weight[i] < 0.0005) {
           delete_edges <- c(delete_edges, E(net)[i])
         }
       }
@@ -218,7 +217,7 @@ shiny_server <- function(input, output, session) {
 
 
       matrix_list <- list()
-      tau_values <- c(2.5, 2, 1.5, 1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
+      tau_values <- c(2, 1.5, 1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
 
       for (i in 1:length(tau_values)) {
         trMatrix <- calculate_transitionMatrix(expData, timepoints, datapoints, tau_values[i])
@@ -259,97 +258,36 @@ shiny_server <- function(input, output, session) {
       cat("\n")
       cat("\n")
 
-
-      #_________________________________________________________________________
-      # trying to create distribution matrices from calculated rate matrix
-
-
-      #---> todo: Anstatt aus P die Verteilungsmatrizen W zu erzeugen, werden nun aus Q die W's erzeugt. Dafür: Matrixexponential
-
-      # #calc new distribution matrices
-      # final_tau <- 0.001
-      # trMatrix <- calculate_transitionMatrix(expData, timepoints, datapoints, final_tau)
-      # Ratio_M <- (1 / final_tau) * (trMatrix - I)
-      
-      # Ratenmatrix Q
-      # Q <- matrix(c(-0.034637232, 0.0153688445, 1.569748e-02, 0.003570910,
-      #               0.040104199, -0.0468738520, 7.006824e-05, 0.006699584,
-      #               0.083745811, 0.0006095134, -9.475599e-02, 0.010400662,
-      #               0.007921515, 0.1293745739, 4.135663e-02, -0.178652717), nrow = 4, byrow = TRUE)
-      # 
-      # # Anfangsverteilung: Einheitsmatrix vom Rang 4
-      # pi_0 <- diag(4)
-      # 
-      # # Iterate over time steps from 0 to 100
-      # for (t in 0:80) {
-      #   # Matrixexponentialfunktion berechnen
-      #   expQt <- expm::expm(Q * t)
-      #   
-      #   # # Verteilung zum Zeitpunkt t berechnen
-      #   # pi_t <- pi_0 %*% expQt
-      #   
-      #   # Ausgabe
-      #   cat("Zeitschritt:", t, "\n")
-      #   cat("Matrixexponentialfunktion:\n")
-      #   print(expQt)
-      #   # cat("Verteilung zum Zeitpunkt t:\n")
-      #   # print(pi_t)
-      #   cat("=============================================\n")
-      # }
-      
-      #_________________________________________________________________________
-      
-      
-      
-      #_________________________________________________________________________
-      #trying to recreate distribution matrices from P
-      # browser()
-      # P <- P
-      # 
-      # # Initial distribution
-      # pi_0 <- diag(cellnr)
-      # 
-      # # Time steps
-      # t <- 12
-      # 
-      # # Calculate distribution after t time steps
-      # pi_t <- pi_0 %*% (P %^% t)
-      # 
-      # # Output
-      # # print("Initial Distribution:")
-      # # print(pi_0)
-      # print(paste("Distribution after", t, "time steps:"))
-      # print(pi_t)
-
-   
-      # transitionMatrix <- transitionMatrix %^% (1/2)
-
       #_________________________________________________________________________
       #plot interaction graph
       output$plot <- renderPlot({
-        tau_values <- c(2.5, 2, 1.5, 1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
+        tau_values <- c(2, 1.5, 1, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001)
         log_tau_values <- log(tau_values)  # Calculate the logarithm of tau_values
-
+        
         plot(log_tau_values, type = "n", xlim = range(log_tau_values), ylim = range(unlist(state_values[-cellstate])),
              xlab = "log(tau)", ylab="", cex.lab = 2.0, cex.axis = 1.5, cex.main = 1.5, cex.sub = 1.5)
-
+        
         allColors <- c("tomato", "gold", "green", "lightblue", "purple", "orange", "cyan", "pink", "brown", "gray")
         colors <- allColors[1:cellnr]
         
+        # Plot original tau values on the x-axis without log transformation
+        axis(1, at = log_tau_values, labels = tau_values, cex.axis = 1.5)
+        
+        # Rest of your plotting code using log_tau_values
         for (i in 1:n) {
           if (i != cellstate) {
             y <- state_values[[i]]
             lines(log_tau_values, y, type = "b", pch = 19, col = colors[i])
           }
         }
-
+        
         colors1 <- c()
         for (i in 1:n) {
           if (i != cellstate) {
             colors1 <- c(colors1, colors[i])
           }
         }
-
+        
         set.seed(1) # just to get the same random numbers
         par(xpd=FALSE)
         legend("left",inset=c(0, 0), legend = labels, lty = 1, col = colors1, cex = 1.5)  # Increase the size of the labels
